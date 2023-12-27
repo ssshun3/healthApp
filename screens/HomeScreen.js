@@ -19,7 +19,7 @@ import {
 } from "firebase/storage";
 import { set, ref as dbRef, onValue, remove } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
-
+import { AntDesign } from "@expo/vector-icons";
 export const HomeScreen = ({ route }) => {
   const { userId } = route.params;
   const scrollViewRef = useRef();
@@ -68,11 +68,12 @@ export const HomeScreen = ({ route }) => {
             <View style={styles.imageDetails}>
               <Text style={styles.titleText}>{data.title}</Text>
               <Text style={styles.descriptionText}>{data.description}</Text>
+              <Text style={styles.dateText}>{data.date}</Text>
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => deleteImage(data.ref)}
               >
-                <Text>削除</Text>
+                <AntDesign name="delete" size={24} color="black" />
               </TouchableOpacity>
             </View>
           </View>
@@ -96,6 +97,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  dateText: {
+    color: "darkgrey",
   },
   imageContainer: {
     marginVertical: 10,

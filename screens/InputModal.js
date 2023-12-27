@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   StyleSheet,
   View,
   Text,
   Button,
   Image,
-  ScrollView,
-  TouchableOpacity,
   TextInput,
+  ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { storage, database } from "../firebase";
-import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
-import { set, ref as dbRef, onValue, remove } from "firebase/database";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { set, ref as dbRef } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
+import { Calendar } from "react-native-calendars";
 
 export const InputModal = ({ route }) => {
   const { userId } = route.params;
@@ -27,9 +22,7 @@ export const InputModal = ({ route }) => {
   const [imageTitle, setImageTitle] = useState("");
   const [imageDescription, setImageDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-
-  // pickImageAsync と uploadImage 関数は元の InputScreen からコピー
-
+  const [selectedDate, setSelectedDate] = useState("");
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -69,6 +62,7 @@ export const InputModal = ({ route }) => {
             ref: fileRef.name,
             title: imageTitle,
             description: imageDescription,
+            date: new Date().toLocaleDateString(),
           };
           set(newImageRef, imageData); // データベースに画像データを保存
 
@@ -84,7 +78,7 @@ export const InputModal = ({ route }) => {
   };
   return (
     <View style={styles.container}>
-      {selectedImage && (
+      <ScrollView>
         <View>
           <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
           <TextInput
@@ -99,9 +93,16 @@ export const InputModal = ({ route }) => {
             value={imageDescription}
             onChangeText={setImageDescription}
           />
+          <Calendar
+            onDayPress={(day) => {
+              setSelectedDate(day.dateString);
+            }}
+          />
+
+          <Text>選択された日付: {selectedDate}</Text>
           <Button title="アップロード" onPress={uploadImage} />
         </View>
-      )}
+      </ScrollView>
       <Text>アップロード進捗: {uploadProgress.toFixed(2)}%</Text>
       <Button title="写真をえらべ！" onPress={pickImageAsync} />
     </View>
@@ -149,8 +150,5 @@ const styles = StyleSheet.create({
   selectedImage: {
     width: 200,
     height: 200,
-  },
-  picButton: {
-    backgroundColor: "blue",
   },
 });
