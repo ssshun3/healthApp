@@ -17,7 +17,9 @@ const LoginScreen = () => {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        navigation.replace("Input");
+        // ユーザーIDを取得し、次の画面に渡す
+        const userId = user.uid;
+        navigation.replace("Input", { userId: userId });
       }
     });
 

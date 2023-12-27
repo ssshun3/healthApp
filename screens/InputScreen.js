@@ -20,7 +20,8 @@ import {
 import { set, ref as dbRef, onValue, remove } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
 
-export const InputScreen = () => {
+export const InputScreen = ({ route }) => {
+  const { userId } = route.params;
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageTitle, setImageTitle] = useState(""); // 画像のタイトル
@@ -40,16 +41,15 @@ export const InputScreen = () => {
     }
   };
   useEffect(() => {
-    // データベースからデータを読み込む
-    const imagesRef = dbRef(database, "images/");
+    // ユーザー固有の画像データのパス
+    const imagesRef = dbRef(database, `users/${userId}/images`);
     onValue(imagesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        // データベースから読み込んだデータを使用して状態を更新
         setImageData(Object.values(data));
       }
     });
-  }, []);
+  }, [userId]);
   const uploadImage = async () => {
     if (!selectedImage) return;
     const response = await fetch(selectedImage);
@@ -69,7 +69,10 @@ export const InputScreen = () => {
       },
       () => {
         getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-          const newImageRef = dbRef(database, "images/" + fileRef.name);
+          const newImageRef = dbRef(
+            database,
+            `users/${userId}/images/${fileRef.name}`
+          );
           const imageData = {
             url: downloadURL,
             ref: fileRef.name,
@@ -85,7 +88,7 @@ export const InputScreen = () => {
   };
 
   const deleteImage = async (imageName) => {
-    const fileRef = ref(storage, "images/" + imageName);
+    const fileRef = ref(storage, `users/${userId}/images/${imageName}`);
     await deleteObject(fileRef)
       .then(() => {
         setImageData((prevData) =>
@@ -95,7 +98,7 @@ export const InputScreen = () => {
       .catch((error) => {
         console.error(error);
       });
-    const dbImageRef = dbRef(database, "images/" + imageName);
+    const dbImageRef = dbRef(database, `users/${userId}/images/${imageName}`);
     remove(dbImageRef);
   };
 
