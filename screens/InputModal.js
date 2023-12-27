@@ -143,6 +143,8 @@ const styles = StyleSheet.create({
     margin: 12,
     borderWidth: 1,
     padding: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
   },
   selectedImage: {
     width: 200,

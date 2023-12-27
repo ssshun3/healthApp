@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -22,18 +22,23 @@ import { useNavigation } from "@react-navigation/native";
 
 export const HomeScreen = ({ route }) => {
   const { userId } = route.params;
+  const scrollViewRef = useRef();
   const navigation = useNavigation();
   const [imageData, setImageData] = useState([]);
 
   useEffect(() => {
     const imagesRef = dbRef(database, `users/${userId}/images`);
-    onValue(imagesRef, (snapshot) => {
+    const unsubscribe = onValue(imagesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
         setImageData(Object.values(data));
       }
     });
+
+    // アンマウント時にリスナーを解除する
+    return () => unsubscribe();
   }, [userId]);
+
   const deleteImage = async (imageName) => {
     const fileRef = ref(storage, `users/${userId}/images/${imageName}`);
     await deleteObject(fileRef)
@@ -48,9 +53,15 @@ export const HomeScreen = ({ route }) => {
     const dbImageRef = dbRef(database, `users/${userId}/images/${imageName}`);
     remove(dbImageRef);
   };
+
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        ref={scrollViewRef}
+        onContentSizeChange={() =>
+          scrollViewRef.current.scrollToEnd({ animated: false })
+        }
+      >
         {imageData.map((data, index) => (
           <View key={index} style={styles.imageContainer}>
             <Image source={{ uri: data.url }} style={styles.image} />
@@ -88,8 +99,11 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginVertical: 10,
-    flexDirection: "row",
+
     alignItems: "center",
+    borderWidth: 5,
+    borderColor: "#87cefa",
+    borderRadius: 10,
   },
   image: {
     width: 250,

@@ -1,7 +1,13 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  KeyboardAvoidingView,
+  TextInput,
+} from "react-native";
 import { useNavigation } from "@react-navigation/core";
 import React, { useState, useEffect } from "react";
-import { KeyboardAvoidingView, TextInput } from "react-native-web";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -44,7 +50,7 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior="padding">
+    <KeyboardAvoidingView style={styles.container} behavior="height">
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="email"
@@ -55,7 +61,8 @@ const LoginScreen = () => {
         <TextInput
           placeholder="pass"
           value={pass}
-          onChangeText={(text) => setPass(text)}
+          onChangeText={(text) => setPass(text.toLowerCase())}
+          // 小文字設定後で変更しましょう
           style={styles.input}
           secureTextEntry
         />
