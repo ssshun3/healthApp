@@ -80,7 +80,12 @@ export const InputModal = ({ route }) => {
     <View style={styles.container}>
       <ScrollView>
         <View>
-          <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+          {selectedImage && (
+            <Image
+              source={{ uri: selectedImage }}
+              style={styles.selectedImage}
+            />
+          )}
           <TextInput
             style={styles.textInput}
             placeholder="画像のタイトル"
@@ -134,21 +139,15 @@ const styles = StyleSheet.create({
   descriptionText: {
     color: "gray",
   },
-  deleteButton: {
-    backgroundColor: "red",
-    padding: 10,
-    marginTop: 5,
-  },
   textInput: {
     height: 40,
     margin: 12,
     borderWidth: 1,
     padding: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
   },
   selectedImage: {
-    width: 200,
-    height: 200,
+    width: "100%", // コンテナの幅に合わせる
+    height: 200, // 高さは固定（必要に応じて調整）
+    resizeMode: "contain", // 画像がコンテナ内に収まるように調整
   },
 });
