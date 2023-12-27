@@ -35,7 +35,6 @@ export const InputScreen = () => {
     });
     if (!result.cancelled) {
       setSelectedImage(result.uri);
-      uploadImage(result.uri);
     }
   };
   useEffect(() => {
@@ -83,10 +82,13 @@ export const InputScreen = () => {
     );
   };
 
-  const deleteImage = async (ref) => {
-    await deleteObject(ref)
+  const deleteImage = async (imageName) => {
+    const fileRef = ref(storage, "images/" + imageName);
+    await deleteObject(fileRef)
       .then(() => {
-        setImageData((prevData) => prevData.filter((data) => data.ref !== ref)); // 削除した画像を除外
+        setImageData((prevData) =>
+          prevData.filter((data) => data.ref !== imageName)
+        ); // 削除した画像を除外
       })
       .catch((error) => {
         console.error(error);

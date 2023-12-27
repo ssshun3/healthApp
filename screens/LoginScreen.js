@@ -8,7 +8,6 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import { auth } from "../firebase";
-import GoogleLogin from "../component/GoogleLogin";
 
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
@@ -44,7 +43,6 @@ const LoginScreen = () => {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior="padding">
-      {/* <GoogleLogin /> */}
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="email"
