@@ -18,8 +18,10 @@ import {
   deleteObject,
 } from "firebase/storage";
 import { set, ref as dbRef, onValue, remove } from "firebase/database";
+import { useNavigation } from "@react-navigation/native";
 
 export const InputScreen = () => {
+  const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
   const [imageTitle, setImageTitle] = useState(""); // 画像のタイトル
   const [imageDescription, setImageDescription] = useState(""); // 画像の説明
@@ -135,6 +137,7 @@ export const InputScreen = () => {
       )}
       <Text>アップロード進捗: {uploadProgress.toFixed(2)}%</Text>
       <Button title="写真をえらべ！" onPress={pickImageAsync} />
+      <Button title="logout" onPress={() => navigation.navigate("LogOut")} />
     </View>
   );
 };
