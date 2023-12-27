@@ -20,14 +20,15 @@ import {
 import { set, ref as dbRef, onValue, remove } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
 
-export const InputScreen = ({ route }) => {
+export const InputModal = ({ route }) => {
   const { userId } = route.params;
   const navigation = useNavigation();
   const [selectedImage, setSelectedImage] = useState(null);
-  const [imageTitle, setImageTitle] = useState(""); // 画像のタイトル
-  const [imageDescription, setImageDescription] = useState(""); // 画像の説明
+  const [imageTitle, setImageTitle] = useState("");
+  const [imageDescription, setImageDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [imageData, setImageData] = useState([]); // 画像のURLとRefを含むオブジェクトを保持する配列
+
+  // pickImageAsync と uploadImage 関数は元の InputScreen からコピー
 
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -40,17 +41,6 @@ export const InputScreen = ({ route }) => {
       setSelectedImage(result.uri);
     }
   };
-  useEffect(() => {
-    // ユーザー固有の画像データのパス
-    const imagesRef = dbRef(database, `users/${userId}/images`);
-    onValue(imagesRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        setImageData(Object.values(data));
-      }
-    });
-  }, [userId]);
-
   const uploadImage = async () => {
     if (!selectedImage) return;
     const response = await fetch(selectedImage);
@@ -87,49 +77,16 @@ export const InputScreen = ({ route }) => {
           setImageTitle("");
           setImageDescription("");
           setUploadProgress(0);
+          navigation.navigate("Home", { userId });
         });
       }
     );
   };
-
-  const deleteImage = async (imageName) => {
-    const fileRef = ref(storage, `users/${userId}/images/${imageName}`);
-    await deleteObject(fileRef)
-      .then(() => {
-        setImageData((prevData) =>
-          prevData.filter((data) => data.ref !== imageName)
-        ); // 削除した画像を除外
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    const dbImageRef = dbRef(database, `users/${userId}/images/${imageName}`);
-    remove(dbImageRef);
-  };
-
   return (
     <View style={styles.container}>
-      <ScrollView>
-        {imageData.map((data, index) => (
-          <View key={index} style={styles.imageContainer}>
-            <Image source={{ uri: data.url }} style={styles.image} />
-            <View style={styles.imageDetails}>
-              <Text style={styles.titleText}>{data.title}</Text>
-              <Text style={styles.descriptionText}>{data.description}</Text>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => deleteImage(data.ref)}
-              >
-                <Text>削除</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))}
-      </ScrollView>
       {selectedImage && (
         <View>
           <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
-
           <TextInput
             style={styles.textInput}
             placeholder="画像のタイトル"
@@ -146,15 +103,12 @@ export const InputScreen = ({ route }) => {
         </View>
       )}
       <Text>アップロード進捗: {uploadProgress.toFixed(2)}%</Text>
-      <Button
-        title="写真をえらべ！"
-        onPress={pickImageAsync}
-        style={styles.picButton}
-      />
-      <Button title="logout" onPress={() => navigation.navigate("LogOut")} />
+      <Button title="写真をえらべ！" onPress={pickImageAsync} />
     </View>
   );
 };
+
+// スタイルは InputScreen のものを使用
 const styles = StyleSheet.create({
   container: {
     flex: 1,

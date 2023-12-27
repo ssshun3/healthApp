@@ -19,7 +19,7 @@ const LoginScreen = () => {
       if (user) {
         // ユーザーIDを取得し、次の画面に渡す
         const userId = user.uid;
-        navigation.replace("Input", { userId: userId });
+        navigation.replace("Home", { userId: userId });
       }
     });
 
