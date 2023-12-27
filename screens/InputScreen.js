@@ -50,6 +50,7 @@ export const InputScreen = ({ route }) => {
       }
     });
   }, [userId]);
+
   const uploadImage = async () => {
     if (!selectedImage) return;
     const response = await fetch(selectedImage);
@@ -80,8 +81,12 @@ export const InputScreen = ({ route }) => {
             description: imageDescription,
           };
           set(newImageRef, imageData); // データベースに画像データを保存
-          // setImageData((prevData) => [...prevData, imageData]);
-          // ここでFirebase Databaseにも情報を保存することができます
+
+          // アップロード成功後に画像の選択をリセット
+          setSelectedImage(null);
+          setImageTitle("");
+          setImageDescription("");
+          setUploadProgress(0);
         });
       }
     );
@@ -123,6 +128,8 @@ export const InputScreen = ({ route }) => {
       </ScrollView>
       {selectedImage && (
         <View>
+          <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+
           <TextInput
             style={styles.textInput}
             placeholder="画像のタイトル"
@@ -179,5 +186,9 @@ const styles = StyleSheet.create({
     margin: 12,
     borderWidth: 1,
     padding: 10,
+  },
+  selectedImage: {
+    width: 200,
+    height: 200,
   },
 });
