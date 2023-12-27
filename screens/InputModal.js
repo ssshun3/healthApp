@@ -13,8 +13,48 @@ import { storage, database } from "../firebase";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { set, ref as dbRef } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
-import { Calendar } from "react-native-calendars";
-
+import { Calendar, LocaleConfig } from "react-native-calendars";
+LocaleConfig.locales.jp = {
+  monthNames: [
+    "1月",
+    "2月",
+    "3月",
+    "4月",
+    "5月",
+    "6月",
+    "7月",
+    "8月",
+    "9月",
+    "10月",
+    "11月",
+    "12月",
+  ],
+  monthNamesShort: [
+    "1月",
+    "2月",
+    "3月",
+    "4月",
+    "5月",
+    "6月",
+    "7月",
+    "8月",
+    "9月",
+    "10月",
+    "11月",
+    "12月",
+  ],
+  dayNames: [
+    "日曜日",
+    "月曜日",
+    "火曜日",
+    "水曜日",
+    "木曜日",
+    "金曜日",
+    "土曜日",
+  ],
+  dayNamesShort: ["日", "月", "火", "水", "木", "金", "土"],
+};
+LocaleConfig.defaultLocale = "jp";
 export const InputModal = ({ route }) => {
   const { userId } = route.params;
   const navigation = useNavigation();
@@ -99,9 +139,11 @@ export const InputModal = ({ route }) => {
             onChangeText={setImageDescription}
           />
           <Calendar
+            monthFormat={"yyyy年 M月"}
             onDayPress={(day) => {
               setSelectedDate(day.dateString);
             }}
+            enableSwipeMonths={true}
           />
 
           <Text>選択された日付: {selectedDate}</Text>

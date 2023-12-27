@@ -61,6 +61,7 @@ export const HomeScreen = ({ route }) => {
         onContentSizeChange={() =>
           scrollViewRef.current.scrollToEnd({ animated: false })
         }
+        style={styles.scrollContainer}
       >
         {imageData.map((data, index) => (
           <View key={index} style={styles.imageContainer}>
@@ -101,16 +102,18 @@ const styles = StyleSheet.create({
   dateText: {
     color: "darkgrey",
   },
+  scrollContainer: {
+    width: "100%",
+  },
   imageContainer: {
-    marginVertical: 10,
-
     alignItems: "center",
     borderWidth: 5,
     borderColor: "#87cefa",
     borderRadius: 10,
+    width: "100%",
   },
   image: {
-    width: 250,
+    width: "100%",
     height: 200,
   },
   imageDetails: {
