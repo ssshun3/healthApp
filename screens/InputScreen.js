@@ -75,7 +75,7 @@ export const InputScreen = () => {
             description: imageDescription,
           };
           set(newImageRef, imageData); // データベースに画像データを保存
-          setImageData((prevData) => [...prevData, imageData]);
+          // setImageData((prevData) => [...prevData, imageData]);
           // ここでFirebase Databaseにも情報を保存することができます
         });
       }
