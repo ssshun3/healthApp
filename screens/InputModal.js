@@ -14,6 +14,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { set, ref as dbRef } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
+import food_data from "../food_data/food_data.json";
 LocaleConfig.locales.jp = {
   monthNames: [
     "1月",
@@ -55,6 +56,7 @@ LocaleConfig.locales.jp = {
   dayNamesShort: ["日", "月", "火", "水", "木", "金", "土"],
 };
 LocaleConfig.defaultLocale = "jp";
+
 export const InputModal = ({ route }) => {
   const { userId } = route.params;
   const navigation = useNavigation();
@@ -63,6 +65,62 @@ export const InputModal = ({ route }) => {
   const [imageDescription, setImageDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedFoods, setSelectedFoods] = useState([]);
+
+  const handleSearch = () => {
+    const results = food_data["食品一覧"].filter((item) =>
+      item["食　品　名"].toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setSearchResults(results);
+  };
+  // const handleSelectFood = (food) => {
+  //   setSelectedFoods([...selectedFoods, food]);
+  // };
+  const handleSelectFood = (food) => {
+    setSelectedFoods([...selectedFoods, { ...food, grams: 100 }]);
+  };
+
+  const handleGramChange = (index, grams) => {
+    const updatedFoods = selectedFoods.map((food, idx) => {
+      if (index === idx) {
+        return { ...food, grams: parseInt(grams, 10) || 100 }; // グラム数を整数に変換
+      }
+      return food;
+    });
+    setSelectedFoods(updatedFoods);
+  };
+
+  const totalEnergy = selectedFoods.reduce((total, food) => {
+    return (
+      total +
+      (food["エネルギー"] !== undefined && food["エネルギー"] !== null
+        ? (food["エネルギー"] * (food.grams || 100)) / 100
+        : 0)
+    );
+  }, 0);
+
+  const totalCalcium = selectedFoods.reduce((total, food) => {
+    const calciumValue = parseFloat(food["カ ル シ ウ ム"]);
+    const grams = parseFloat(food.grams) || 100;
+
+    return (
+      total +
+      (!isNaN(calciumValue) && !isNaN(grams) ? (calciumValue * grams) / 100 : 0)
+    );
+  }, 0);
+  const handleRemoveFood = (index) => {
+    const updatedFoods = selectedFoods.filter((_, idx) => idx !== index);
+    setSelectedFoods(updatedFoods);
+  };
+  const foodInfo = selectedFoods.map((food) => ({
+    name: food["食　品　名"],
+    energy: food["エネルギー"],
+    calcium: food["カ ル シ ウ ム"],
+    ggrams: food.grams || 100,
+  }));
+
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -80,7 +138,12 @@ export const InputModal = ({ route }) => {
     const blob = await response.blob();
     const fileRef = ref(storage, "images/" + new Date().getTime());
     const uploadTask = uploadBytesResumable(fileRef, blob);
-
+    const foodInfo = selectedFoods.map((food) => ({
+      name: food["食　品　名"],
+      energy: food["エネルギー"],
+      calcium: food["カ ル シ ウ ム"],
+      grams: food.grams || 100, // 未定義の場合はデフォルト値を使用
+    }));
     uploadTask.on(
       "state_changed",
       (snapshot) => {
@@ -103,14 +166,17 @@ export const InputModal = ({ route }) => {
             title: imageTitle,
             description: imageDescription,
             date: new Date().toLocaleDateString(),
+            foodInfo,
+            totalEnergy,
+            totalCalcium,
           };
-          set(newImageRef, imageData); // データベースに画像データを保存
+          set(newImageRef, imageData);
 
-          // アップロード成功後に画像の選択をリセット
           setSelectedImage(null);
           setImageTitle("");
           setImageDescription("");
           setUploadProgress(0);
+          setSelectedFoods([]);
           navigation.navigate("Home", { userId });
         });
       }
@@ -126,12 +192,60 @@ export const InputModal = ({ route }) => {
               style={styles.selectedImage}
             />
           )}
+
           <TextInput
             style={styles.textInput}
             placeholder="画像のタイトル"
             value={imageTitle}
             onChangeText={setImageTitle}
           />
+          <TextInput
+            placeholder="食品名を入力"
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+          <Button title="検索" onPress={handleSearch} />
+          {searchResults.map((item, index) => (
+            <View key={index} style={styles.itemContainer}>
+              <Text>{item["食　品　名"]}</Text>
+              <Button title="選択" onPress={() => handleSelectFood(item)} />
+            </View>
+          ))}
+          <View>
+            {selectedFoods.map((food, index) => (
+              <View key={index} style={styles.foodItem}>
+                <Text>{food["食　品　名"]}</Text>
+                <TextInput
+                  style={styles.gramInput}
+                  onChangeText={(text) => handleGramChange(index, text)}
+                  value={food.grams || "100"}
+                  keyboardType="numeric"
+                />
+                <Button title="消去" onPress={() => handleRemoveFood(index)} />
+                <Text>
+                  {food["エネルギー"] !== undefined &&
+                  food["エネルギー"] !== null
+                    ? `${(food["エネルギー"] * (food.grams || 100)) / 100} kcal`
+                    : "エネルギー情報なし"}
+                </Text>
+                <Text>
+                  {food["カ ル シ ウ ム"] !== undefined &&
+                  food["カ ル シ ウ ム"] !== null
+                    ? isNaN(food["カ ル シ ウ ム"])
+                      ? `${food["カ ル シ ウ ム"]} mg` // 数値でない場合はそのまま表示
+                      : `${(
+                          (parseFloat(food["カ ル シ ウ ム"]) *
+                            (parseFloat(food.grams) || 100)) /
+                          100
+                        ).toFixed(2)} mg` // 数値の場合は計算して表示
+                    : "カルシウム情報なし"}
+                </Text>
+              </View>
+            ))}
+          </View>
+
+          <Text>合計エネルギー: {totalEnergy} kcal</Text>
+          <Text>合計カルシウム: {totalCalcium} mg</Text>
           <TextInput
             style={styles.textInput}
             placeholder="画像の説明"

@@ -70,6 +70,15 @@ export const HomeScreen = ({ route }) => {
               <Text style={styles.titleText}>{data.title}</Text>
               <Text style={styles.descriptionText}>{data.description}</Text>
               <Text style={styles.dateText}>{data.date}</Text>
+              {data.foodInfo &&
+                data.foodInfo.map((food, idx) => (
+                  <Text key={idx}>
+                    {food.name}: {food.grams}g
+                  </Text>
+                ))}
+
+              <Text>合計エネルギー: {data.totalEnergy} kcal</Text>
+              <Text>合計カルシウム: {data.totalCalcium} mg</Text>
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => deleteImage(data.ref)}
