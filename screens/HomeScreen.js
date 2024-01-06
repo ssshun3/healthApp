@@ -99,19 +99,22 @@ export const HomeScreen = ({ route }) => {
           </View>
         ))}
       </ScrollView>
-      <Button
-        title="新しい画像を追加"
+      <TouchableOpacity
+        style={styles.addButton}
         onPress={() => navigation.navigate("InputModal", { userId })}
-      />
-      <Button
-        title="ログアウト"
+      >
+        <Text style={styles.addButtonText}>新しい画像を追加</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.logOutButton}
         onPress={() => navigation.navigate("LogOut")}
-      />
+      >
+        <Text style={styles.logOutButtonText}>ログアウト</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-// スタイルは InputScreen のものを使用
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -161,5 +164,29 @@ const styles = StyleSheet.create({
   },
   picButton: {
     backgroundColor: "blue",
+  },
+  addButton: {
+    backgroundColor: "#0782F9",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  logOutButton: {
+    backgroundColor: "#87ceeb",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  logOutButtonText: {
+    color: "black",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });

@@ -7,6 +7,7 @@ import {
   Image,
   TextInput,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { storage, database } from "../firebase";
@@ -96,6 +97,19 @@ export const InputModal = ({ route }) => {
       return food;
     });
     setSelectedFoods(updatedFoods);
+  };
+  const calculateNutrientsForFood = (food) => {
+    return nutrientNames.map((nutrientName) => {
+      const nutrientValue = parseFloat(food[nutrientName]);
+      const grams = parseFloat(food.grams) || 100;
+      return {
+        name: nutrientName,
+        total:
+          !isNaN(nutrientValue) && !isNaN(grams)
+            ? (nutrientValue * grams) / 100
+            : 0,
+      };
+    });
   };
 
   const calculateTotalNutrients = (nutrientName) => {
@@ -213,32 +227,52 @@ export const InputModal = ({ route }) => {
             placeholder="食品名を入力"
             value={searchTerm}
             onChangeText={setSearchTerm}
+            style={styles.textInput}
           />
-          <Button title="検索" onPress={handleSearch} />
+          <TouchableOpacity onPress={handleSearch} style={styles.buttonSearch}>
+            <Text style={styles.buttonText}>検索</Text>
+          </TouchableOpacity>
           {searchResults.map((item, index) => (
             <View key={index} style={styles.itemContainer}>
               <Text>{item["食　品　名"]}</Text>
-              <Button title="選択" onPress={() => handleSelectFood(item)} />
+              <TouchableOpacity
+                onPress={() => handleSelectFood(item)}
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>選択</Text>
+              </TouchableOpacity>
             </View>
           ))}
           <View>
             {selectedFoods.map((food, index) => (
-              <View key={index} style={styles.foodItem}>
-                <Text>{food["食　品　名"]}</Text>
-                <TextInput
-                  style={styles.gramInput}
-                  onChangeText={(text) => handleGramChange(index, text)}
-                  value={food.grams || "100"}
-                  keyboardType="numeric"
-                />
-                <Button title="消去" onPress={() => handleRemoveFood(index)} />
-                <Text>
-                  {nutrientTotals.map((nutrient, index) => (
-                    <Text key={index}>{`${
-                      nutrient.name
-                    }: ${nutrient.total.toFixed(1)}`}</Text>
-                  ))}
-                </Text>
+              <View key={index}>
+                <View style={styles.foodItem}>
+                  <View>
+                    <Text>{food["食　品　名"]}</Text>
+                    <TextInput
+                      style={styles.gramInput}
+                      onChangeText={(text) => handleGramChange(index, text)}
+                      value={food.grams || "100"}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveFood(index)}
+                      style={styles.buttonDelate}
+                    >
+                      <Text style={styles.buttonText}>消去</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {calculateNutrientsForFood(food).map(
+                  (nutrient, nutrientIndex) => (
+                    <Text key={nutrientIndex}>
+                      {displayNutrientWithUnit(nutrient.name, nutrient.total)}
+                    </Text>
+                  )
+                )}
               </View>
             ))}
             <Text>
@@ -270,11 +304,15 @@ export const InputModal = ({ route }) => {
           />
 
           <Text>選択された日付: {selectedDate}</Text>
-          <Button title="アップロード" onPress={uploadImage} />
+          <TouchableOpacity onPress={uploadImage} style={styles.button}>
+            <Text style={styles.buttonText}>アップロード</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
       <Text>アップロード進捗: {uploadProgress.toFixed(2)}%</Text>
-      <Button title="写真をえらべ！" onPress={pickImageAsync} />
+      <TouchableOpacity onPress={pickImageAsync} style={styles.button}>
+        <Text style={styles.buttonText}>写真をえらべ！</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -314,5 +352,35 @@ const styles = StyleSheet.create({
     width: "100%", // コンテナの幅に合わせる
     height: 200, // 高さは固定（必要に応じて調整）
     resizeMode: "contain", // 画像がコンテナ内に収まるように調整
+  },
+  foodItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  button: {
+    backgroundColor: "#0782F9",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  buttonSearch: {
+    backgroundColor: "green",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonDelate: {
+    backgroundColor: "tomato",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
   },
 });
