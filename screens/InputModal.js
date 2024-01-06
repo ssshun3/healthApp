@@ -7,6 +7,7 @@ import {
   Image,
   TextInput,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { storage, database } from "../firebase";
@@ -14,6 +15,7 @@ import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { set, ref as dbRef } from "firebase/database";
 import { useNavigation } from "@react-navigation/native";
 import { Calendar, LocaleConfig } from "react-native-calendars";
+import food_data from "../food_data/food_data.json";
 LocaleConfig.locales.jp = {
   monthNames: [
     "1月",
@@ -55,6 +57,7 @@ LocaleConfig.locales.jp = {
   dayNamesShort: ["日", "月", "火", "水", "木", "金", "土"],
 };
 LocaleConfig.defaultLocale = "jp";
+
 export const InputModal = ({ route }) => {
   const { userId } = route.params;
   const navigation = useNavigation();
@@ -63,6 +66,91 @@ export const InputModal = ({ route }) => {
   const [imageDescription, setImageDescription] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedDate, setSelectedDate] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedFoods, setSelectedFoods] = useState([]);
+
+  const handleSearch = () => {
+    const results = food_data["食品一覧"].filter((item) =>
+      item["食　品　名"].toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setSearchResults(results);
+  };
+  // 単位のデータを取得
+  const units = food_data["単位"][0];
+
+  // 栄養素とその単位を組み合わせて表示
+  const displayNutrientWithUnit = (nutrientName, total) => {
+    const unit = units[nutrientName];
+    return `${nutrientName}: ${total.toFixed(2)} ${unit}`;
+  };
+  // タンパク質、脂質、炭水化物、ビタミンA、ビタミンE、ビタミンＢ１、ビタミンB２、ビタミンC、食塩相当量、鉄
+  const handleSelectFood = (food) => {
+    setSelectedFoods([...selectedFoods, { ...food, grams: 100 }]);
+  };
+
+  const handleGramChange = (index, grams) => {
+    const updatedFoods = selectedFoods.map((food, idx) => {
+      if (index === idx) {
+        return { ...food, grams: parseInt(grams, 10) || 100 };
+      }
+      return food;
+    });
+    setSelectedFoods(updatedFoods);
+  };
+  const calculateNutrientsForFood = (food) => {
+    return nutrientNames.map((nutrientName) => {
+      const nutrientValue = parseFloat(food[nutrientName]);
+      const grams = parseFloat(food.grams) || 100;
+      return {
+        name: nutrientName,
+        total:
+          !isNaN(nutrientValue) && !isNaN(grams)
+            ? (nutrientValue * grams) / 100
+            : 0,
+      };
+    });
+  };
+
+  const calculateTotalNutrients = (nutrientName) => {
+    return selectedFoods.reduce((total, food) => {
+      const nutrientValue = parseFloat(food[nutrientName]);
+      const grams = parseFloat(food.grams) || 100;
+      return (
+        total +
+        (!isNaN(nutrientValue) && !isNaN(grams)
+          ? (nutrientValue * grams) / 100
+          : 0)
+      );
+    }, 0);
+  };
+
+  // 各栄養素の名前のリスト（カロリーとカルシウムも含む）
+  const nutrientNames = [
+    "エネルギー",
+    "カルシウム",
+    "たんぱく質",
+    "脂質",
+    "炭水化物",
+    "ビタミンA",
+    "ビタミンE",
+    "ビタミンB1",
+    "ビタミンB2",
+    "ビタミンC",
+    "食塩相当量",
+    "鉄",
+  ];
+  // 各栄養素の合計値を計算
+  const nutrientTotals = nutrientNames.map((nutrientName) => ({
+    name: nutrientName,
+    total: calculateTotalNutrients(nutrientName),
+  }));
+
+  const handleRemoveFood = (index) => {
+    const updatedFoods = selectedFoods.filter((_, idx) => idx !== index);
+    setSelectedFoods(updatedFoods);
+  };
+
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -103,14 +191,16 @@ export const InputModal = ({ route }) => {
             title: imageTitle,
             description: imageDescription,
             date: new Date().toLocaleDateString(),
+            foodInfo: selectedFoods, // 食品情報
+            nutrients: nutrientTotals, // 栄養素の合計値
+            units: units,
           };
-          set(newImageRef, imageData); // データベースに画像データを保存
-
-          // アップロード成功後に画像の選択をリセット
+          set(newImageRef, imageData);
           setSelectedImage(null);
           setImageTitle("");
           setImageDescription("");
           setUploadProgress(0);
+          setSelectedFoods([]);
           navigation.navigate("Home", { userId });
         });
       }
@@ -126,12 +216,79 @@ export const InputModal = ({ route }) => {
               style={styles.selectedImage}
             />
           )}
+
           <TextInput
             style={styles.textInput}
             placeholder="画像のタイトル"
             value={imageTitle}
             onChangeText={setImageTitle}
           />
+          <TextInput
+            placeholder="食品名を入力"
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+            style={styles.textInput}
+          />
+          <TouchableOpacity onPress={handleSearch} style={styles.buttonSearch}>
+            <Text style={styles.buttonText}>検索</Text>
+          </TouchableOpacity>
+          {searchResults.map((item, index) => (
+            <View key={index} style={styles.text}>
+              <Text>{item["食　品　名"]}</Text>
+              <TouchableOpacity
+                onPress={() => handleSelectFood(item)}
+                style={styles.button}
+              >
+                <Text style={styles.buttonText}>選択</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+          <View>
+            {selectedFoods.map((food, index) => (
+              <View key={index} style={styles.text}>
+                <View style={styles.foodItem}>
+                  <View style={styles.foodText}>
+                    <Text>{food["食　品　名"]}</Text>
+                    <TextInput
+                      onChangeText={(text) => handleGramChange(index, text)}
+                      value={food.grams || "100"}
+                      keyboardType="numeric"
+                      style={styles.text}
+                    />
+                  </View>
+                  <View>
+                    <TouchableOpacity
+                      onPress={() => handleRemoveFood(index)}
+                      style={styles.buttonDelate}
+                    >
+                      <Text style={styles.buttonText}>取消</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                {calculateNutrientsForFood(food).map(
+                  (nutrient, nutrientIndex) => (
+                    <Text key={nutrientIndex}>
+                      {displayNutrientWithUnit(nutrient.name, nutrient.total)}
+                    </Text>
+                  )
+                )}
+              </View>
+            ))}
+            <Text>
+              ()内の数値は推定値を表しています。合計値には反映されません。
+            </Text>
+            <Text>
+              Trは極微小であることを表しています。合計値には反映されません。
+            </Text>
+            <View style={styles.text}>
+              <Text>栄養素合計</Text>
+              {nutrientTotals.map((nutrient, index) => (
+                <Text key={index}>
+                  {displayNutrientWithUnit(nutrient.name, nutrient.total)}
+                </Text>
+              ))}
+            </View>
+          </View>
           <TextInput
             style={styles.textInput}
             placeholder="画像の説明"
@@ -147,11 +304,15 @@ export const InputModal = ({ route }) => {
           />
 
           <Text>選択された日付: {selectedDate}</Text>
-          <Button title="アップロード" onPress={uploadImage} />
+          <TouchableOpacity onPress={uploadImage} style={styles.button}>
+            <Text style={styles.buttonText}>アップロード</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
       <Text>アップロード進捗: {uploadProgress.toFixed(2)}%</Text>
-      <Button title="写真をえらべ！" onPress={pickImageAsync} />
+      <TouchableOpacity onPress={pickImageAsync} style={styles.button}>
+        <Text style={styles.buttonText}>写真をえらべ！</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -191,5 +352,42 @@ const styles = StyleSheet.create({
     width: "100%", // コンテナの幅に合わせる
     height: 200, // 高さは固定（必要に応じて調整）
     resizeMode: "contain", // 画像がコンテナ内に収まるように調整
+  },
+  foodItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  button: {
+    backgroundColor: "#0782F9",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  buttonSearch: {
+    backgroundColor: "green",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  buttonDelate: {
+    backgroundColor: "tomato",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  foodText: {
+    width: "80%",
+  },
+  text: {
+    borderWidth: 1,
+    padding: 10,
   },
 });

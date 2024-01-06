@@ -53,7 +53,6 @@ export const HomeScreen = ({ route }) => {
     const dbImageRef = dbRef(database, `users/${userId}/images/${imageName}`);
     remove(dbImageRef);
   };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -70,6 +69,26 @@ export const HomeScreen = ({ route }) => {
               <Text style={styles.titleText}>{data.title}</Text>
               <Text style={styles.descriptionText}>{data.description}</Text>
               <Text style={styles.dateText}>{data.date}</Text>
+
+              {data.foodInfo &&
+                data.foodInfo.map((food, foodIndex) => (
+                  <View key={foodIndex}>
+                    <Text style={styles.foodName}>{food["食　品　名"]}</Text>
+                    <Text style={styles.foodGrams}>{`${food.grams} g`}</Text>
+                  </View>
+                ))}
+
+              <Text style={styles.nutrientTitle}>栄養素の合計:</Text>
+              {data.nutrients &&
+                data.units &&
+                data.nutrients.map((nutrient, nutrientIdx) => (
+                  <Text key={nutrientIdx}>
+                    {`${nutrient.name}: ${nutrient.total.toFixed(2)} ${
+                      data.units[nutrient.name] || ""
+                    }`}
+                  </Text>
+                ))}
+
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => deleteImage(data.ref)}
@@ -80,19 +99,22 @@ export const HomeScreen = ({ route }) => {
           </View>
         ))}
       </ScrollView>
-      <Button
-        title="新しい画像を追加"
+      <TouchableOpacity
+        style={styles.addButton}
         onPress={() => navigation.navigate("InputModal", { userId })}
-      />
-      <Button
-        title="ログアウト"
+      >
+        <Text style={styles.addButtonText}>新しい画像を追加</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.logOutButton}
         onPress={() => navigation.navigate("LogOut")}
-      />
+      >
+        <Text style={styles.logOutButtonText}>ログアウト</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
-// スタイルは InputScreen のものを使用
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -142,5 +164,29 @@ const styles = StyleSheet.create({
   },
   picButton: {
     backgroundColor: "blue",
+  },
+  addButton: {
+    backgroundColor: "#0782F9",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  addButtonText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  logOutButton: {
+    backgroundColor: "#87ceeb",
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  logOutButtonText: {
+    color: "black",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });
