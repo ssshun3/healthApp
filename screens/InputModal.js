@@ -75,9 +75,15 @@ export const InputModal = ({ route }) => {
     );
     setSearchResults(results);
   };
-  // const handleSelectFood = (food) => {
-  //   setSelectedFoods([...selectedFoods, food]);
-  // };
+  // 単位のデータを取得
+  const units = food_data["単位"][0];
+
+  // 栄養素とその単位を組み合わせて表示
+  const displayNutrientWithUnit = (nutrientName, total) => {
+    const unit = units[nutrientName];
+    return `${nutrientName}: ${total.toFixed(2)} ${unit}`;
+  };
+  // タンパク質、脂質、炭水化物、ビタミンA、ビタミンE、ビタミンＢ１、ビタミンB２、ビタミンC、食塩相当量、鉄
   const handleSelectFood = (food) => {
     setSelectedFoods([...selectedFoods, { ...food, grams: 100 }]);
   };
@@ -85,41 +91,51 @@ export const InputModal = ({ route }) => {
   const handleGramChange = (index, grams) => {
     const updatedFoods = selectedFoods.map((food, idx) => {
       if (index === idx) {
-        return { ...food, grams: parseInt(grams, 10) || 100 }; // グラム数を整数に変換
+        return { ...food, grams: parseInt(grams, 10) || 100 };
       }
       return food;
     });
     setSelectedFoods(updatedFoods);
   };
 
-  const totalEnergy = selectedFoods.reduce((total, food) => {
-    return (
-      total +
-      (food["エネルギー"] !== undefined && food["エネルギー"] !== null
-        ? (food["エネルギー"] * (food.grams || 100)) / 100
-        : 0)
-    );
-  }, 0);
+  const calculateTotalNutrients = (nutrientName) => {
+    return selectedFoods.reduce((total, food) => {
+      const nutrientValue = parseFloat(food[nutrientName]);
+      const grams = parseFloat(food.grams) || 100;
+      return (
+        total +
+        (!isNaN(nutrientValue) && !isNaN(grams)
+          ? (nutrientValue * grams) / 100
+          : 0)
+      );
+    }, 0);
+  };
 
-  const totalCalcium = selectedFoods.reduce((total, food) => {
-    const calciumValue = parseFloat(food["カ ル シ ウ ム"]);
-    const grams = parseFloat(food.grams) || 100;
+  // 各栄養素の名前のリスト（カロリーとカルシウムも含む）
+  const nutrientNames = [
+    "エネルギー",
+    "カ ル シ ウ ム",
+    "たんぱく質",
+    "脂質",
+    "炭水化物",
+    "ビタミンA",
+    "ビタミンE",
+    "ビタミンB1",
+    "ビタミンB2",
+    "ビタミンC",
+    "食塩相当量",
+    "鉄",
+  ];
+  // 各栄養素の合計値を計算
+  const nutrientTotals = nutrientNames.map((nutrientName) => ({
+    name: nutrientName,
+    total: calculateTotalNutrients(nutrientName),
+  }));
 
-    return (
-      total +
-      (!isNaN(calciumValue) && !isNaN(grams) ? (calciumValue * grams) / 100 : 0)
-    );
-  }, 0);
   const handleRemoveFood = (index) => {
     const updatedFoods = selectedFoods.filter((_, idx) => idx !== index);
     setSelectedFoods(updatedFoods);
   };
-  const foodInfo = selectedFoods.map((food) => ({
-    name: food["食　品　名"],
-    energy: food["エネルギー"],
-    calcium: food["カ ル シ ウ ム"],
-    ggrams: food.grams || 100,
-  }));
 
   const pickImageAsync = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -138,12 +154,7 @@ export const InputModal = ({ route }) => {
     const blob = await response.blob();
     const fileRef = ref(storage, "images/" + new Date().getTime());
     const uploadTask = uploadBytesResumable(fileRef, blob);
-    const foodInfo = selectedFoods.map((food) => ({
-      name: food["食　品　名"],
-      energy: food["エネルギー"],
-      calcium: food["カ ル シ ウ ム"],
-      grams: food.grams || 100, // 未定義の場合はデフォルト値を使用
-    }));
+
     uploadTask.on(
       "state_changed",
       (snapshot) => {
@@ -166,12 +177,11 @@ export const InputModal = ({ route }) => {
             title: imageTitle,
             description: imageDescription,
             date: new Date().toLocaleDateString(),
-            foodInfo,
-            totalEnergy,
-            totalCalcium,
+            foodInfo: selectedFoods, // 食品情報
+            nutrients: nutrientTotals, // 栄養素の合計値
+            units: units,
           };
           set(newImageRef, imageData);
-
           setSelectedImage(null);
           setImageTitle("");
           setImageDescription("");
@@ -223,29 +233,28 @@ export const InputModal = ({ route }) => {
                 />
                 <Button title="消去" onPress={() => handleRemoveFood(index)} />
                 <Text>
-                  {food["エネルギー"] !== undefined &&
-                  food["エネルギー"] !== null
-                    ? `${(food["エネルギー"] * (food.grams || 100)) / 100} kcal`
-                    : "エネルギー情報なし"}
-                </Text>
-                <Text>
-                  {food["カ ル シ ウ ム"] !== undefined &&
-                  food["カ ル シ ウ ム"] !== null
-                    ? isNaN(food["カ ル シ ウ ム"])
-                      ? `${food["カ ル シ ウ ム"]} mg` // 数値でない場合はそのまま表示
-                      : `${(
-                          (parseFloat(food["カ ル シ ウ ム"]) *
-                            (parseFloat(food.grams) || 100)) /
-                          100
-                        ).toFixed(2)} mg` // 数値の場合は計算して表示
-                    : "カルシウム情報なし"}
+                  {nutrientTotals.map((nutrient, index) => (
+                    <Text key={index}>{`${
+                      nutrient.name
+                    }: ${nutrient.total.toFixed(1)}`}</Text>
+                  ))}
                 </Text>
               </View>
             ))}
+            <Text>
+              ()内の数値は推定値を表しています。合計値には反映されません。
+            </Text>
+            <Text>
+              Trは極微小であることを表しています。合計値には反映されません。
+            </Text>
+            <View>
+              {nutrientTotals.map((nutrient, index) => (
+                <Text key={index}>
+                  {displayNutrientWithUnit(nutrient.name, nutrient.total)}
+                </Text>
+              ))}
+            </View>
           </View>
-
-          <Text>合計エネルギー: {totalEnergy} kcal</Text>
-          <Text>合計カルシウム: {totalCalcium} mg</Text>
           <TextInput
             style={styles.textInput}
             placeholder="画像の説明"

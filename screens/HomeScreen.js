@@ -53,7 +53,6 @@ export const HomeScreen = ({ route }) => {
     const dbImageRef = dbRef(database, `users/${userId}/images/${imageName}`);
     remove(dbImageRef);
   };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -70,15 +69,26 @@ export const HomeScreen = ({ route }) => {
               <Text style={styles.titleText}>{data.title}</Text>
               <Text style={styles.descriptionText}>{data.description}</Text>
               <Text style={styles.dateText}>{data.date}</Text>
+
               {data.foodInfo &&
-                data.foodInfo.map((food, idx) => (
-                  <Text key={idx}>
-                    {food.name}: {food.grams}g
+                data.foodInfo.map((food, foodIndex) => (
+                  <View key={foodIndex}>
+                    <Text style={styles.foodName}>{food["食　品　名"]}</Text>
+                    <Text style={styles.foodGrams}>{`${food.grams} g`}</Text>
+                  </View>
+                ))}
+
+              <Text style={styles.nutrientTitle}>栄養素の合計:</Text>
+              {data.nutrients &&
+                data.units &&
+                data.nutrients.map((nutrient, nutrientIdx) => (
+                  <Text key={nutrientIdx}>
+                    {`${nutrient.name}: ${nutrient.total.toFixed(2)} ${
+                      data.units[nutrient.name] || ""
+                    }`}
                   </Text>
                 ))}
 
-              <Text>合計エネルギー: {data.totalEnergy} kcal</Text>
-              <Text>合計カルシウム: {data.totalCalcium} mg</Text>
               <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={() => deleteImage(data.ref)}
