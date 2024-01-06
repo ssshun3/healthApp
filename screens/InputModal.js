@@ -128,7 +128,7 @@ export const InputModal = ({ route }) => {
   // 各栄養素の名前のリスト（カロリーとカルシウムも含む）
   const nutrientNames = [
     "エネルギー",
-    "カ ル シ ウ ム",
+    "カルシウム",
     "たんぱく質",
     "脂質",
     "炭水化物",
@@ -233,7 +233,7 @@ export const InputModal = ({ route }) => {
             <Text style={styles.buttonText}>検索</Text>
           </TouchableOpacity>
           {searchResults.map((item, index) => (
-            <View key={index} style={styles.itemContainer}>
+            <View key={index} style={styles.text}>
               <Text>{item["食　品　名"]}</Text>
               <TouchableOpacity
                 onPress={() => handleSelectFood(item)}
@@ -245,15 +245,15 @@ export const InputModal = ({ route }) => {
           ))}
           <View>
             {selectedFoods.map((food, index) => (
-              <View key={index}>
+              <View key={index} style={styles.text}>
                 <View style={styles.foodItem}>
-                  <View>
+                  <View style={styles.foodText}>
                     <Text>{food["食　品　名"]}</Text>
                     <TextInput
-                      style={styles.gramInput}
                       onChangeText={(text) => handleGramChange(index, text)}
                       value={food.grams || "100"}
                       keyboardType="numeric"
+                      style={styles.text}
                     />
                   </View>
                   <View>
@@ -261,11 +261,10 @@ export const InputModal = ({ route }) => {
                       onPress={() => handleRemoveFood(index)}
                       style={styles.buttonDelate}
                     >
-                      <Text style={styles.buttonText}>消去</Text>
+                      <Text style={styles.buttonText}>取消</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-
                 {calculateNutrientsForFood(food).map(
                   (nutrient, nutrientIndex) => (
                     <Text key={nutrientIndex}>
@@ -281,7 +280,8 @@ export const InputModal = ({ route }) => {
             <Text>
               Trは極微小であることを表しています。合計値には反映されません。
             </Text>
-            <View>
+            <View style={styles.text}>
+              <Text>栄養素合計</Text>
               {nutrientTotals.map((nutrient, index) => (
                 <Text key={index}>
                   {displayNutrientWithUnit(nutrient.name, nutrient.total)}
@@ -382,5 +382,12 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
+  },
+  foodText: {
+    width: "80%",
+  },
+  text: {
+    borderWidth: 1,
+    padding: 10,
   },
 });
